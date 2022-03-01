@@ -38,7 +38,7 @@
 %====================================================================================
 
 
-function [H] = mainTrackImageSL3(capture_params, tracking_param)
+function [H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_param)
 
 % Setup debugging variables
 global DEBUG_LEVEL_1;
@@ -48,7 +48,9 @@ DEBUG_LEVEL_1 = 0;
 DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
-tracking_param.changereference = 1; %for reference patch changing - Question 6
+%for reference patch changing - Question 6
+tracking_param.changereference = 1; 
+tracking_param.changereference_thresh = 1;
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -88,6 +90,9 @@ i=1;
 % Loop through sequence
 % Store the x values through the iterations
 all_x = [];
+% store the itertion number and norm_x that had a reference image change
+change_ref_i = [];
+change_ref_x = [];
 %u can change the reference patch here to do the left right for example
 for(k=capture_params.first+1:capture_params.last)
 		i = i+1;
@@ -114,13 +119,17 @@ for(k=capture_params.first+1:capture_params.last)
     [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
         % for changing the reference patch for Question 6
-        tracking_param.changereference = change_ref_or_not(norm_x);
+        all_x = [all_x norm_x];
+        tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
         if(tracking_param.changereference)
             ReferenceImage.I = CurrentImage.I;
             %ReferenceImage.Irgb = CurrentImage.Irgb;
             ReferenceImage.polygon = WarpedImage.polygon;
             ReferenceImage.index = WarpedImage.index;
             ReferenceImage.Mask = WarpedImage.Mask;
+            % these are for plotting purposes
+            change_ref_i = [change_ref_i i-1];
+            change_ref_x = [change_ref_x norm_x];
         end
 	
 		if(tracking_param.display)
@@ -134,13 +143,16 @@ return;
 
 
 % function to decide whether to change ref image or not
-function [change] = change_ref_or_not(norm_x, thresh)
-if norm_x > thresh
+function [change] = change_ref_or_not(norm_x, tracking_param)
+change = false;
+if norm_x > tracking_param.changereference_thresh
+    change = true
+end
 return
 
 
 % Default test function if no values are given
-function test()
+function [all_x, change_ref_i, change_ref_x] = test()
 
 tracking_params.max_iter = 165; %can stop tracking from here - 45
 tracking_params.max_err = 400; %depends on the size of the patch, can do the average to be invariant on the patch size
@@ -155,10 +167,10 @@ tracking_params.size_x = 8; % number of parameters to estimate
 
 
 % Change for your paths here
-capture_params.homedir = '/MIR Erasmus/vslam-AR/cyclopes/'
+capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
 % capture_params.data_dir = '/MIR Erasmus/VSLAM/Versailles_canyon/Right/'
-capture_params.data_dir = '/MIR Erasmus/vslam-AR/Versailles_canyon/Left/'
+capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
 %for underwater: 
 % capture_params.data_dir = '/MIR Erasmus/VSLAM/IMAGES_smallRGB/'
 %capture_params.data_dir = [getenv('DIR_DATA'), '/../data/Versailles/Versailles_canyon/Left/']; 
@@ -173,12 +185,14 @@ capture_params.suffix = '.pgm';
 % capture_params.suffix = '.png'
 
 capture_params.string_size= 4; %4
-capture_params.first = 50; %1
+capture_params.first = 99; %1
 capture_params.last = 100;
 capture_params.savepolygon = 1; % to save the polygon --> 1
 capture_params.loadpolygon = 0; %to load the polygon --> 1
 
-
-[H] = mainTrackImageSL3(capture_params, tracking_params);
+[H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_params);
+plot(all_x);
+hold on;
+scatter(change_ref_i, change_ref_x, 100,"red","filled","*");
 
 return;

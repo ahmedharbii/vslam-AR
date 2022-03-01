@@ -38,7 +38,7 @@
 %====================================================================================
 
 
-function [H] = mainTrackImageSL3(capture_params, tracking_param)
+function [H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_param)
 
 % Setup debugging variables
 global DEBUG_LEVEL_1;
@@ -50,7 +50,7 @@ DEBUG_LEVEL_3 = 0;
 
 %for reference patch changing - Question 6
 tracking_param.changereference = 1; 
-tracking_param.changereference_thresh = 1000;
+tracking_param.changereference_thresh = 1;
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -90,6 +90,9 @@ i=1;
 % Loop through sequence
 % Store the x values through the iterations
 all_x = [];
+% store the itertion number and norm_x that had a reference image change
+change_ref_i = [];
+change_ref_x = [];
 %u can change the reference patch here to do the left right for example
 for(k=capture_params.first+1:capture_params.last)
 		i = i+1;
@@ -124,6 +127,9 @@ for(k=capture_params.first+1:capture_params.last)
             ReferenceImage.polygon = WarpedImage.polygon;
             ReferenceImage.index = WarpedImage.index;
             ReferenceImage.Mask = WarpedImage.Mask;
+            % these are for plotting purposes
+            change_ref_i = [change_ref_i i-1];
+            change_ref_x = [change_ref_x norm_x];
         end
 	
 		if(tracking_param.display)
@@ -146,7 +152,7 @@ return
 
 
 % Default test function if no values are given
-function test()
+function [all_x, change_ref_i, change_ref_x] = test()
 
 tracking_params.max_iter = 165; %can stop tracking from here - 45
 tracking_params.max_err = 400; %depends on the size of the patch, can do the average to be invariant on the patch size
@@ -179,12 +185,14 @@ capture_params.suffix = '.pgm';
 % capture_params.suffix = '.png'
 
 capture_params.string_size= 4; %4
-capture_params.first = 50; %1
+capture_params.first = 99; %1
 capture_params.last = 100;
 capture_params.savepolygon = 1; % to save the polygon --> 1
 capture_params.loadpolygon = 0; %to load the polygon --> 1
 
-
-[H] = mainTrackImageSL3(capture_params, tracking_params);
+[H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_params);
+plot(all_x);
+hold on;
+scatter(change_ref_i, change_ref_x, 100,"red","filled","*");
 
 return;

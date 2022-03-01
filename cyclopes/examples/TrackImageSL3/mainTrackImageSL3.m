@@ -49,8 +49,9 @@ DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
 %for reference patch changing - Question 6
-tracking_param.changereference = 1; 
-tracking_param.changereference_thresh = 1;
+tracking_param.changereference = 1;
+tracking_param.changereference_key = 1; %to turn off the whole changing reference
+tracking_param.changereference_thresh = 0.1;
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -109,7 +110,7 @@ for(k=capture_params.first+1:capture_params.last)
 		  CurrentImage.I = rgb2gray(CurrentImage.Irgb);
         end
         
-        if(tracking_param.changereference)
+        if(tracking_param.changereference && tracking_param.changereference_key)
             Htrack = eye(3,3);
         else
             Htrack = H(:,:,i-1); %to pass it to TrackImageSL3
@@ -121,7 +122,7 @@ for(k=capture_params.first+1:capture_params.last)
         % for changing the reference patch for Question 6
         all_x = [all_x norm_x];
         tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
-        if(tracking_param.changereference)
+        if(tracking_param.changereference && tracking_param.changereference_key)
             ReferenceImage.I = CurrentImage.I;
             %ReferenceImage.Irgb = CurrentImage.Irgb;
             ReferenceImage.polygon = WarpedImage.polygon;
@@ -160,7 +161,7 @@ tracking_params.max_x = 1e-4; %norm(x), when x comes small, I will stop - 1e-1
 tracking_params.display = 1;
 tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 tracking_params.mestimator = 1;
-tracking_params.robust_method='tukey'; % Can be 'huber' or 'tukey' for the moment
+tracking_params.robust_method='huber'; % Can be 'huber' or 'tukey' for the moment
 tracking_params.scale_threshold = 2; % 1 grey level - try 2
 tracking_params.size_x = 8; % number of parameters to estimate
 
@@ -185,14 +186,16 @@ capture_params.suffix = '.pgm';
 % capture_params.suffix = '.png'
 
 capture_params.string_size= 4; %4
-capture_params.first = 99; %1
+capture_params.first = 50; %1
 capture_params.last = 100;
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 [H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_params);
+figure(2)
 plot(all_x);
 hold on;
-scatter(change_ref_i, change_ref_x, 100,"red","filled","*");
+figure(3)
+scatter(change_ref_i, change_ref_x, 100,'red','filled',"*");
 
 return;

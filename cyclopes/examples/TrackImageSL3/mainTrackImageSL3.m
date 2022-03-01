@@ -48,7 +48,9 @@ DEBUG_LEVEL_1 = 0;
 DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
-tracking_param.changereference = 1; %for reference patch changing - Question 6
+%for reference patch changing - Question 6
+tracking_param.changereference = 1; 
+tracking_param.changereference_thresh = 1000;
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -86,7 +88,8 @@ H(:,:,1) = eye(3,3); %intialising the homography matrix with 3x3 identity
 % Homography index
 i=1;
 % Loop through sequence
-
+% Store the x values through the iterations
+all_x = [];
 %u can change the reference patch here to do the left right for example
 for(k=capture_params.first+1:capture_params.last)
 		i = i+1;
@@ -110,9 +113,11 @@ for(k=capture_params.first+1:capture_params.last)
         end
 
 		% Iterative non-linear homography estimation
-    [H(:,:,i), WarpedImage] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
+    [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
         % for changing the reference patch for Question 6
+        all_x = [all_x norm_x];
+        tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
         if(tracking_param.changereference)
             ReferenceImage.I = CurrentImage.I;
             %ReferenceImage.Irgb = CurrentImage.Irgb;
@@ -131,6 +136,14 @@ end
 return;
 
 
+% function to decide whether to change ref image or not
+function [change] = change_ref_or_not(norm_x, tracking_param)
+change = false;
+if norm_x > tracking_param.changereference_thresh
+    change = true
+end
+return
+
 
 % Default test function if no values are given
 function test()
@@ -148,10 +161,10 @@ tracking_params.size_x = 8; % number of parameters to estimate
 
 
 % Change for your paths here
-capture_params.homedir = '/MIR Erasmus/vslam-AR/cyclopes/'
+capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
 % capture_params.data_dir = '/MIR Erasmus/VSLAM/Versailles_canyon/Right/'
-capture_params.data_dir = '/MIR Erasmus/vslam-AR/Versailles_canyon/Left/'
+capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
 %for underwater: 
 % capture_params.data_dir = '/MIR Erasmus/VSLAM/IMAGES_smallRGB/'
 %capture_params.data_dir = [getenv('DIR_DATA'), '/../data/Versailles/Versailles_canyon/Left/']; 

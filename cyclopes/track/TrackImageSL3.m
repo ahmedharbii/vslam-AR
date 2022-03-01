@@ -20,7 +20,7 @@
 %===================================================================
 
 
-function [Hnew, WarpedImage] = TrackImageSL3(ReferenceImage, CurrentImage, H, tracking_param)
+function [Hnew, WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, H, tracking_param)
 
 global DEBUG_LEVEL_2;
 if(DEBUG_LEVEL_2)
@@ -61,7 +61,7 @@ while(iter< tracking_param.max_iter && norm(x) > tracking_param.max_x && norm(re
 				%Pseudo inverse precalculated if no mestimator
 				[x, weights] = Estimate(WarpedImage, ReferenceImage, residues, tracking_param);
 
-		  case 2
+		    case 2
 				% Compute Current Jacobian
 				[WarpedImage.J, WarpedImage.JI] = JacobianImageSL3(WarpedImage.I, WarpedImage.P, WarpedImage.index);
 				[x, weights] = Estimate(WarpedImage, ReferenceImage, residues, tracking_param);
@@ -113,6 +113,8 @@ if(tracking_param.display)
 
 
 end
+
+norm_x = norm(x);
 
 return
 

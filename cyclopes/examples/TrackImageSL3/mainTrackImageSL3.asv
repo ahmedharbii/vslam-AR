@@ -48,7 +48,7 @@ DEBUG_LEVEL_1 = 0;
 DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
-tracking_param.changereference = 0; %for reference patch changing
+tracking_param.changereference = 1; %for reference patch changing - Question 6
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -86,7 +86,8 @@ H(:,:,1) = eye(3,3); %intialising the homography matrix with 3x3 identity
 % Homography index
 i=1;
 % Loop through sequence
-
+% Store the x values through the iterations
+all_x = [];
 %u can change the reference patch here to do the left right for example
 for(k=capture_params.first+1:capture_params.last)
 		i = i+1;
@@ -106,13 +107,14 @@ for(k=capture_params.first+1:capture_params.last)
         if(tracking_param.changereference)
             Htrack = eye(3,3);
         else
-            Htrack = H(:,:,i-1);
+            Htrack = H(:,:,i-1); %to pass it to TrackImageSL3
         end
 
 		% Iterative non-linear homography estimation
-    [H(:,:,i), WarpedImage] = TrackImageSL3(ReferenceImage, CurrentImage, H(:,:,i-1), tracking_param);
+    [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
         % for changing the reference patch for Question 6
+        tracking_param.changereference = change_ref_or_not(norm_x);
         if(tracking_param.changereference)
             ReferenceImage.I = CurrentImage.I;
             %ReferenceImage.Irgb = CurrentImage.Irgb;
@@ -130,6 +132,11 @@ end
 
 return;
 
+
+% function to decide whether to change ref image or not
+function [change] = change_ref_or_not(norm_x, thresh)
+if norm_x > thresh
+return
 
 
 % Default test function if no values are given
@@ -166,10 +173,10 @@ capture_params.suffix = '.pgm';
 % capture_params.suffix = '.png'
 
 capture_params.string_size= 4; %4
-capture_params.first = 1; %1
+capture_params.first = 50; %1
 capture_params.last = 100;
-capture_params.savepolygon = 0; % to save the polygon --> 1
-capture_params.loadpolygon = 1; %to load the polygon --> 1
+capture_params.savepolygon = 1; % to save the polygon --> 1
+capture_params.loadpolygon = 0; %to load the polygon --> 1
 
 
 [H] = mainTrackImageSL3(capture_params, tracking_params);

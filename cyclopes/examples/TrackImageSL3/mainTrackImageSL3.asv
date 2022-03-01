@@ -48,7 +48,7 @@ DEBUG_LEVEL_1 = 0;
 DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
-tracking_param.changereference = 1; %for reference patch changing - Question 6
+tracking_param.changereference = 0; %for reference patch changing
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -106,11 +106,11 @@ for(k=capture_params.first+1:capture_params.last)
         if(tracking_param.changereference)
             Htrack = eye(3,3);
         else
-            Htrack = H(:,:,i-1); %to pass it to TrackImageSL3
+            Htrack = H(:,:,i-1);
         end
 
 		% Iterative non-linear homography estimation
-    [H(:,:,i), WarpedImage] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
+    [H(:,:,i), WarpedImage] = TrackImageSL3(ReferenceImage, CurrentImage, H(:,:,i-1), tracking_param);
 		H(:,:,i) %for displaying
         % for changing the reference patch for Question 6
         if(tracking_param.changereference)
@@ -166,10 +166,10 @@ capture_params.suffix = '.pgm';
 % capture_params.suffix = '.png'
 
 capture_params.string_size= 4; %4
-capture_params.first = 50; %1
+capture_params.first = 1; %1
 capture_params.last = 100;
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 
 [H] = mainTrackImageSL3(capture_params, tracking_params);

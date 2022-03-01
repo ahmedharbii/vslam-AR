@@ -158,7 +158,7 @@ tracking_params.max_iter = 165; %can stop tracking from here - 45
 tracking_params.max_err = 400; %depends on the size of the patch, can do the average to be invariant on the patch size
 tracking_params.max_x = 1e-4; %norm(x), when x comes small, I will stop - 1e-1
 tracking_params.display = 1;
-tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 tracking_params.mestimator = 1;
 tracking_params.robust_method='tukey'; % Can be 'huber' or 'tukey' for the moment
 tracking_params.scale_threshold = 2; % 1 grey level - try 2
@@ -191,6 +191,11 @@ capture_params.savepolygon = 1; % to save the polygon --> 1
 capture_params.loadpolygon = 0; %to load the polygon --> 1
 
 [H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_params);
+
+assignin('base','all_x',all_x);
+assignin('base','change_ref_i',change_ref_i);
+assignin('base','change_ref_x',change_ref_x);
+
 plot(all_x);
 hold on;
 scatter(change_ref_i, change_ref_x, 100,"red","filled","*");

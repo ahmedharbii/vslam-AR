@@ -135,7 +135,7 @@ for(k=capture_params.first+1:capture_params.last)
 	
 		if(tracking_param.display)
 			figure(1); hold on;	
-			%DrawImagePoly('Warped Current Image', 1, CurrentImage.I, WarpedImage.polygon);
+			DrawImagePoly('Warped Current Image', 1, CurrentImage.I, WarpedImage.polygon);
         end
 
 end

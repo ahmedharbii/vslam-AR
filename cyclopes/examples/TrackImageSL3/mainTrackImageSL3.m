@@ -140,10 +140,10 @@ for(k=capture_params.first+1:capture_params.last)
 		% Iterative non-linear homography estimation
         [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
-        tform = projective2d(H(:,:,i)); 
+
+        tform = projective2d(H(:,:,i)'); 
         Ir = imwarp(Ir, tform); 
-        figure
-        imshow(Ir);
+
         % for changing the reference patch for Question 6
         all_x = [all_x norm_x];
         tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
@@ -223,7 +223,7 @@ capture_params.suffix = '.png';
 capture_params.string_size= 4; %4
 
 capture_params.first = 300; %1
-capture_params.last = 305;
+capture_params.last = 400;
 capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
 
@@ -255,4 +255,6 @@ function show_kalb(original, Ir)
     
     figure(4);
     imshow(overlaped_image);
+    Filename = sprintf('kalb/test_%s.png', datestr(now,'mm-dd-yyyy HH-MM-SS'));
+    imwrite(overlaped_image,Filename);
 return;

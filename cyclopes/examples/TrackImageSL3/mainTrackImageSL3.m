@@ -256,3 +256,15 @@ function overlay_2_images(background_image, foreground_image)
     Filename = sprintf('kalb/test_%s.png', datestr(now,'mm-dd-yyyy HH-MM-SS'));
     imwrite(overlaped_image,Filename);
 return;
+
+% warp 2d image using polygon points
+function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygon)
+    resized_image = imresize(image_to_warp,[100, 100]);
+    matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
+    matchedPtsOriginal = polygon(1:2,1:end-1)';
+    
+    [tform,inlierIdx] = estimateGeometricTransform2D(matchedPtsDistorted,matchedPtsOriginal,'projective');
+    
+    outputView = imref2d(size(background_image.I));
+    warped_2d_image = imwarp(resized_image,tform,'OutputView',outputView);
+return;

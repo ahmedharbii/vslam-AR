@@ -52,9 +52,9 @@ DEBUG_LEVEL_3 = 0;
 kalb = imread("dog_grayscale_p.png");
 
 %for reference patch changing - Question 6
-tracking_param.changereference = 1;
-tracking_param.changereference_key = 1; %to turn off the whole changing reference
-tracking_param.changereference_thresh = 0.01;
+tracking_param.changereference = 0;
+tracking_param.changereference_key = 0; %to turn off the whole changing reference
+tracking_param.changereference_thresh = 0.1;
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -80,6 +80,7 @@ ReferenceImage = InitTrackImageSL3(capture_params);
 close all;
 
 if(tracking_param.display)
+    figure;
 	scrsz = get(0,'ScreenSize');
 	figure('Position',[scrsz(3)/4 scrsz(4)/2 scrsz(3)/2 scrsz(4)/2]);
 	DrawImagePoly('Reference Image', 1, ReferenceImage.I, ReferenceImage.polygon);
@@ -93,16 +94,10 @@ H(:,:,1) = eye(3,3); %intialising the homography matrix with 3x3 identity
 
 %% Overlab image to selected planar patch
 % resize the virtual image to insert
-kalb = imresize(kalb,[100, 100]);
-matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
-matchedPtsOriginal = ReferenceImage.polygon(1:2,1:end-1)';
 
-[tform,inlierIdx] = estimateGeometricTransform2D(matchedPtsDistorted,matchedPtsOriginal,'projective');
+Ir_original = warp_2d_image(kalb, ReferenceImage, ReferenceImage.polygon);
 
-outputView = imref2d(size(ReferenceImage.I));
-Ir = imwarp(kalb,tform,'OutputView',outputView);
-
-show_kalb(ReferenceImage.I, Ir)
+overlay_2_images(ReferenceImage.I, Ir_original)
 %%
 
 % Homography index
@@ -125,7 +120,6 @@ for(k=capture_params.first+1:capture_params.last)
 		% Read current image
 		if(strcmp(capture_params.suffix, '.pgm'))
 			CurrentImage.I = imread(file_I);
-
 		else
 			CurrentImage.Irgb = imread(file_I);
 		  CurrentImage.I = rgb2gray(CurrentImage.Irgb);
@@ -141,8 +135,10 @@ for(k=capture_params.first+1:capture_params.last)
         [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
 
-        tform = projective2d(H(:,:,i)'); 
-        Ir = imwarp(Ir, tform); 
+%         tform = projective2d(H(:,:,i)'); 
+%         Ir = imwarp(Ir_original, tform); 
+        % warp a 2d image inside a polygon defined patch.
+        Ir = warp_2d_image(kalb, CurrentImage, WarpedImage.polygon);
 
         % for changing the reference patch for Question 6
         all_x = [all_x norm_x];
@@ -163,7 +159,7 @@ for(k=capture_params.first+1:capture_params.last)
 		if(tracking_param.display)
 			figure(1); hold on;	
 			DrawImagePoly('Warped Current Image', 1, CurrentImage.I, WarpedImage.polygon);
-            show_kalb(ReferenceImage.I, Ir)
+            overlay_2_images(CurrentImage.I, Ir)
         end
 
 end
@@ -222,8 +218,8 @@ capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
-capture_params.first = 300; %1
-capture_params.last = 400;
+capture_params.first = 220; %1
+capture_params.last = 280;
 capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
 
@@ -246,15 +242,29 @@ end
 
 return;
 
-function show_kalb(original, Ir)
-    [x, y] = find(Ir>0);
-    overlaped_image = original;
+% overlay foreground_image on background_image
+% where foreground is zeroes at pixels that are related to backround.
+function overlay_2_images(background_image, foreground_image)
+    [x, y] = find(foreground_image>0);
+    overlaped_image = background_image;
     for i=1:size(x, 1)
-        overlaped_image(x(i), y(i)) = Ir(x(i), y(i));
+        overlaped_image(x(i), y(i)) = foreground_image(x(i), y(i));
     end
     
     figure(4);
     imshow(overlaped_image);
     Filename = sprintf('kalb/test_%s.png', datestr(now,'mm-dd-yyyy HH-MM-SS'));
     imwrite(overlaped_image,Filename);
+return;
+
+% warp 2d image using polygon points
+function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygon)
+    resized_image = imresize(image_to_warp,[100, 100]);
+    matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
+    matchedPtsOriginal = polygon(1:2,1:end-1)';
+    
+    [tform,inlierIdx] = estimateGeometricTransform2D(matchedPtsDistorted,matchedPtsOriginal,'projective');
+    
+    outputView = imref2d(size(background_image.I));
+    warped_2d_image = imwarp(resized_image,tform,'OutputView',outputView);
 return;

@@ -38,7 +38,7 @@
 %====================================================================================
 
 
-function [H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_param)
+function [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_param)
 
 % Setup debugging variables
 global DEBUG_LEVEL_1;
@@ -48,10 +48,13 @@ DEBUG_LEVEL_1 = 0;
 DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
+% AR
+kalb = imread("dog_grayscale_p.png");
+
 %for reference patch changing - Question 6
-tracking_param.changereference = 1;
-tracking_param.changereference_key = 1; %to turn off the whole changing reference
-tracking_param.changereference_thresh = 0.01;
+tracking_param.changereference = 0;
+tracking_param.changereference_key = 0; %to turn off the whole changing reference
+tracking_param.changereference_thresh = 0.1;
 
 if(nargin==0)
   disp('Launching test with default values...')
@@ -77,6 +80,7 @@ ReferenceImage = InitTrackImageSL3(capture_params);
 close all;
 
 if(tracking_param.display)
+    figure;
 	scrsz = get(0,'ScreenSize');
 	figure('Position',[scrsz(3)/4 scrsz(4)/2 scrsz(3)/2 scrsz(4)/2]);
 	DrawImagePoly('Reference Image', 1, ReferenceImage.I, ReferenceImage.polygon);
@@ -86,6 +90,16 @@ end
 %in calibration, no initalizing with identity
 H(:,:,1) = eye(3,3); %intialising the homography matrix with 3x3 identity
 
+
+
+%% Overlab image to selected planar patch
+% resize the virtual image to insert
+
+Ir_original = warp_2d_image(kalb, ReferenceImage, ReferenceImage.polygon);
+
+overlay_2_images(ReferenceImage.I, Ir_original)
+%%
+
 % Homography index
 i=1;
 % Loop through sequence
@@ -94,6 +108,8 @@ all_x = [];
 % store the itertion number and norm_x that had a reference image change
 change_ref_i = [];
 change_ref_x = [];
+change_ref_curr_img = [];
+change_ref_wrap_img_polygon = [];
 %u can change the reference patch here to do the left right for example
 for(k=capture_params.first+1:capture_params.last)
 		i = i+1;
@@ -104,7 +120,6 @@ for(k=capture_params.first+1:capture_params.last)
 		% Read current image
 		if(strcmp(capture_params.suffix, '.pgm'))
 			CurrentImage.I = imread(file_I);
-
 		else
 			CurrentImage.Irgb = imread(file_I);
 		  CurrentImage.I = rgb2gray(CurrentImage.Irgb);
@@ -117,8 +132,14 @@ for(k=capture_params.first+1:capture_params.last)
         end
 
 		% Iterative non-linear homography estimation
-    [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
+        [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
+
+%         tform = projective2d(H(:,:,i)'); 
+%         Ir = imwarp(Ir_original, tform); 
+        % warp a 2d image inside a polygon defined patch.
+        Ir = warp_2d_image(kalb, CurrentImage, WarpedImage.polygon);
+
         % for changing the reference patch for Question 6
         all_x = [all_x norm_x];
         tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
@@ -131,14 +152,23 @@ for(k=capture_params.first+1:capture_params.last)
             % these are for plotting purposes
             change_ref_i = [change_ref_i i-1];
             change_ref_x = [change_ref_x norm_x];
+            change_ref_curr_img = [change_ref_curr_img CurrentImage.I];
+            change_ref_wrap_img_polygon = [change_ref_wrap_img_polygon WarpedImage.polygon];
         end
 	
 		if(tracking_param.display)
 			figure(1); hold on;	
-			%DrawImagePoly('Warped Current Image', 1, CurrentImage.I, WarpedImage.polygon);
+			DrawImagePoly('Warped Current Image', 1, CurrentImage.I, WarpedImage.polygon);
+            overlay_2_images(CurrentImage.I, Ir)
         end
 
 end
+
+assignin('base','all_x',all_x);
+assignin('base','change_ref_i',change_ref_i);
+assignin('base','change_ref_x',change_ref_x);
+assignin('base','change_ref_curr_img',change_ref_curr_img);
+assignin('base','change_ref_wrap_img_polygon',change_ref_wrap_img_polygon);
 
 return;
 
@@ -153,7 +183,7 @@ return
 
 
 % Default test function if no values are given
-function [all_x, change_ref_i, change_ref_x] = test()
+function test()
 
 tracking_params.max_iter = 165; %can stop tracking from here - 45
 tracking_params.max_err = 200; %depends on the size of the patch, can do the average to be invariant on the patch size
@@ -179,28 +209,62 @@ capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 %capture_params.homedir = getenv('DIR_CYCLOPES'); 
 
 %for the street:
-capture_params.prefix = 'ima';
-capture_params.suffix = '.pgm';
+% capture_params.prefix = 'ima';
+% capture_params.suffix = '.pgm';
 
 % for the underwater:
-% capture_params.prefix = 'img'
-% capture_params.suffix = '.png'
+capture_params.prefix = 'img';
+capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
-capture_params.first = 1; %1
-capture_params.last = 100;
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
 
-[H, all_x, change_ref_i, change_ref_x] = mainTrackImageSL3(capture_params, tracking_params);
+capture_params.first = 220; %1
+capture_params.last = 280;
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
-assignin('base','all_x',all_x);
-assignin('base','change_ref_i',change_ref_i);
-assignin('base','change_ref_x',change_ref_x);
+[H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
 
 figure(2)
 plot(all_x);
 hold on;
-scatter(change_ref_i, change_ref_x, 100,'red','filled',"o");
 
+scatter(change_ref_i, change_ref_x, 10,'red','filled',"o");
+
+for i=1:size(change_ref_x,1)
+    figure(3);
+    w = waitforbuttonpress;
+    sz1 = uint16(size(change_ref_curr_img, 2) / 3);
+    sz = uint16(size(change_ref_wrap_img_polygon, 2) / 3);
+    DrawImagePoly('Warped Current Image', 1, change_ref_curr_img(:,((i-1)*sz1 + 1):i*sz1), change_ref_wrap_img_polygon(:,((i-1)*sz + 1):i*sz));
+    title(["change at frame=" change_ref_i(i) "x=" change_ref_x(i)])
+end
+
+return;
+
+% overlay foreground_image on background_image
+% where foreground is zeroes at pixels that are related to backround.
+function overlay_2_images(background_image, foreground_image)
+    [x, y] = find(foreground_image>0);
+    overlaped_image = background_image;
+    for i=1:size(x, 1)
+        overlaped_image(x(i), y(i)) = foreground_image(x(i), y(i));
+    end
+    
+    figure(4);
+    imshow(overlaped_image);
+    Filename = sprintf('kalb/test_%s.png', datestr(now,'mm-dd-yyyy HH-MM-SS'));
+    imwrite(overlaped_image,Filename);
+return;
+
+% warp 2d image using polygon points
+function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygon)
+    resized_image = imresize(image_to_warp,[100, 100]);
+    matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
+    matchedPtsOriginal = polygon(1:2,1:end-1)';
+    
+    [tform,inlierIdx] = estimateGeometricTransform2D(matchedPtsDistorted,matchedPtsOriginal,'projective');
+    
+    outputView = imref2d(size(background_image.I));
+    warped_2d_image = imwarp(resized_image,tform,'OutputView',outputView);
 return;

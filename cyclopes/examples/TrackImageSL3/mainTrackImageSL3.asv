@@ -50,11 +50,11 @@ DEBUG_LEVEL_3 = 0;
 
 % AR
 kalb = imread("dog_grayscale_p.png");
-obj = readObj("models/fox.obj");
+obj = readObj("models/wolf.obj");
 % display_obj(obj,"dog_grayscale_p.png")
 w = 632;
 h = 480;
-a = 70 * pi / 180.0;
+a = 100 * pi / 180.0;
 d = sqrt(w^2 + h^2);
 f = 0.5 * d / tan(a/2);
 camera_parameters = [
@@ -146,11 +146,13 @@ for(k=capture_params.first+1:capture_params.last)
         [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
 
-%         tform = projective2d(H(:,:,i)'); 
-%         Ir = imwarp(Ir_original, tform); 
         % warp a 2d image inside a polygon defined patch.
-        Ir = warp_2d_image(kalb, CurrentImage, WarpedImage.polygon);
-
+        H(end,:,i)
+        tform = affine2d(H(:,:,i)'); 
+        Ir = imwarp(Ir_original, tform); 
+%         Ir = warp_2d_image(kalb, CurrentImage, WarpedImage.polygon);
+        
+        % estimate the 3d projection matrix
         proj_mat = projection_matrix(camera_parameters, H(:,:,i));
 
         % for changing the reference patch for Question 6
@@ -179,7 +181,7 @@ for(k=capture_params.first+1:capture_params.last)
 
             % render a 3d object on the polygon defined image patch
             [x, y] = find(WarpedImage.I>0);
-            img = render(CurrentImage.I, obj, proj_mat, min(y), max(x));
+            img = render(CurrentImage.I, obj, proj_mat, 0.5 * (min(y) + max(y)), 0.5 * (min(x) + max(x)));
 
             % save the rendered image
             Filename = sprintf('3d/test_%s.png', datestr(now,'mm-dd-yyyy HH-MM-SS'));
@@ -261,8 +263,6 @@ end
 return;
 
 %% Helper Functions
-%====================
-
 %% function to decide whether to change ref image or not
 function [change] = change_ref_or_not(norm_x, tracking_param)
 change = false;
@@ -286,8 +286,7 @@ function overlay_2_images(background_image, foreground_image)
     imwrite(overlaped_image,Filename);
 return;
 
-%%
-% warp 2d image using polygon points
+%% warp 2d image using polygon points
 function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygon)
     resized_image = imresize(image_to_warp,[100, 100]);
     matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
@@ -299,29 +298,36 @@ function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygo
     warped_2d_image = imwarp(resized_image,tform,'OutputView',outputView);
 return;
 
-%% find projection matrix
+%% find 3d projection matrix
 function result = projection_matrix(camera_parameters, homography)
     %From the camera calibration matrix and the estimated homography
     %compute the 3D projection matrix
     % Compute rotation along the x and y axis as well as the translation
+
     homography = homography * -1;
     rot_and_transl = camera_parameters \ homography;
     col_1 = rot_and_transl(:, 1);
     col_2 = rot_and_transl(:, 2);
     col_3 = rot_and_transl(:, 3);
     % normalise vectors
-    l = sqrt(norm(col_1) * norm(col_2));
+    l = sqrt(norm(col_1, 2) * norm(col_2, 2));
     rot_1 = col_1 / l;
     rot_2 = col_2 / l;
     translation = col_3 / l;
+%     translation(1,1) = -1 * translation(1,1);
+%     translation(3,1) = -1 * translation(3,1);
     % compute the orthonormal basis
-    c = rot_1 + rot_2;
-    p = cross(rot_1, rot_2);
-    d = cross(c, p);
-    rot_1 = (c / norm(c) + d / norm(d)) *  (1 / sqrt(2));
-    rot_2 = (c / norm(c) - d / norm(d)) *  (1 / sqrt(2));
+%     c = rot_1 + rot_2;
+%     p = cross(rot_1, rot_2);
+%     d = cross(c, p);
+%     rot_1 = (c / norm(c) + d / norm(d)) *  (-1 / sqrt(2));
+%     rot_2 = (c / norm(c) - d / norm(d)) *  (1 / sqrt(2));
     rot_3 = cross(rot_1, rot_2);
     % finally, compute the 3D projection matrix from the model to the current frame
+%     rot_x = [[rotx(30); [0, 0, 0]], [0; 0; 0; 1]];
+%     rot_y = [[roty(0); [0, 0, 0]], [0; 0; 0; 1]];
+%     rot_z = [[rotz(0); [0, 0, 0]], [0; 0; 0; 1]];
+%     rot = rot_x * rot_y * rot_z;
     projection = [rot_1, rot_2, rot_3, translation];
     result = camera_parameters * projection;
     return;
@@ -330,13 +336,32 @@ function result = projection_matrix(camera_parameters, homography)
 function img = render(img, obj, projection, h, w)
     
 % Render a loaded obj model into the current video frame
-    
+
     vertices = obj.v;
-    scale_matrix = eye(3) * 1;
+    scale_matrix = eye(3) * 0.1;
 %     h = size(model,1);
 %     w = size(model,2);
 %     h = 200;
 %     w = 300;
+    
+    % find center of 3d model to use it to translate its center to patch
+    % center
+    points = [];
+    for i=1:size(obj.f.v,1)
+        face_vertices = obj.f.v(i,:);
+        for v_idx=1:size(face_vertices,2)
+            vertex = face_vertices(v_idx);
+            points = [points; vertices(vertex,:)];
+        end
+        points = points * scale_matrix;
+
+        % render model in the middle of the reference surface. To do so,
+        % model points must be displaced
+    end
+    center_x = 0.5 * (abs(min(points(:, 1))) + abs(max(points(:, 1))));
+    center_y = 0.5 * (abs(min(points(:, 2))) + abs(max(points(:, 2))));
+
+
     for i=1:size(obj.f.v,1)
         points = [];
         face_vertices = obj.f.v(i,:);
@@ -351,7 +376,7 @@ function img = render(img, obj, projection, h, w)
         tmp_points = [];
         for p_idx=1:size(points,1)
             p = points(p_idx,:);
-            tmp_points = [tmp_points; [p(1) + w, p(2) + h, p(3), 1]];
+            tmp_points = [tmp_points; [p(1) + w + center_x, p(2) + h - center_y, p(3), 1]];
         end
         points = tmp_points;
 

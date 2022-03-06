@@ -210,6 +210,7 @@ capture_params.homedir = [pwd '\cyclopes\']
 
 % capture_params.data_dir = '/MIR Erasmus/VSLAM/Versailles_canyon/Right/'
 % capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+
 %for underwater: 
 capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
 %capture_params.data_dir = [getenv('DIR_DATA'), '/../data/Versailles/Versailles_canyon/Left/']; 
@@ -225,11 +226,11 @@ capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
-capture_params.first = 281; %1
-capture_params.last = 481;
 
-capture_params.savepolygon = 0; % to save the polygon --> 1
-capture_params.loadpolygon = 1; %to load the polygon --> 1
+capture_params.first = 280; %1
+capture_params.last = 480;
+capture_params.savepolygon = 1; % to save the polygon --> 1
+capture_params.loadpolygon = 0; %to load the polygon --> 1
 
 [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
 

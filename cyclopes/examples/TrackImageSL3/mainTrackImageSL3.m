@@ -50,7 +50,7 @@ DEBUG_LEVEL_3 = 0;
 
 % AR
 kalb = imread("dog_grayscale_p.png");
-obj = readObj("models/wolf.obj");
+obj = readObj("models/fox.obj");
 % display_obj(obj,"dog_grayscale_p.png")
 w = 632;
 h = 480;
@@ -342,7 +342,12 @@ function img = render(img, obj, projection, h, w)
 % Render a loaded obj model into the current video frame
 
     vertices = obj.v;
-    scale_matrix = eye(3) * 0.1;
+    scale_matrix = eye(3) * 1;
+
+    rot_x = [[rotx(90); [0, 0, 0]], [0; 0; 0; 1]];
+    rot_y = [[roty(0); [0, 0, 0]], [0; 0; 0; 1]];
+    rot_z = [[rotz(0); [0, 0, 0]], [0; 0; 0; 1]];
+    rot = rot_x * rot_y * rot_z;
 %     h = size(model,1);
 %     w = size(model,2);
 %     h = 200;
@@ -399,6 +404,7 @@ function img = render(img, obj, projection, h, w)
         hom_projection = [projection; [0, 0, 0, 1]];
         tform = affine3d(hom_projection');
         
+%         points = rot * points;
         % apply the transform to the 3d model points
         [U1,V1,W1] = transformPointsForward(tform,points(1,1),points(1,2), points(1,3));
         [U2,V2,W2] = transformPointsForward(tform,points(2,1),points(2,2), points(2,3));

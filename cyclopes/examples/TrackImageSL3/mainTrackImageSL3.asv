@@ -36,7 +36,8 @@
 %	CONTACT: comport@i3s.unice.fr
 %
 %====================================================================================
-
+% close all
+% clear variables
 
 function [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_param)
 
@@ -50,11 +51,11 @@ DEBUG_LEVEL_3 = 0;
 
 % AR
 kalb = imread("dog_grayscale_p.png");
-obj = readObj("models/fox.obj");
+obj = readObj("models/pucker-fish.obj");
 % display_obj(obj,"dog_grayscale_p.png")
 w = 632;
 h = 480;
-a = 70 * pi / 180.0;
+a = 100 * pi / 180.0;
 d = sqrt(w^2 + h^2);
 f = 0.5 * d / tan(a/2);
 camera_parameters = [
@@ -146,11 +147,12 @@ for(k=capture_params.first+1:capture_params.last)
         [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 		H(:,:,i) %for displaying
 
-%         tform = projective2d(H(:,:,i)'); 
-%         Ir = imwarp(Ir_original, tform); 
         % warp a 2d image inside a polygon defined patch.
+        %         tform = projective2d(H(:,:,i)'); 
+        %         Ir = imwarp(Ir_original, tform); 
         Ir = warp_2d_image(kalb, CurrentImage, WarpedImage.polygon);
-
+        
+        % estimate the 3d projection matrix
         proj_mat = projection_matrix(camera_parameters, H(:,:,i));
 
         % for changing the reference patch for Question 6
@@ -220,6 +222,7 @@ capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
 % capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 % capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+
 %for underwater: 
 capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
 
@@ -236,10 +239,12 @@ capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
-capture_params.first = 281; %1
-capture_params.last = 481;
+
+capture_params.first = 280; %1
+capture_params.last = 480;
 capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
+
 
 [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
 
@@ -261,8 +266,6 @@ end
 return;
 
 %% Helper Functions
-%====================
-
 %% function to decide whether to change ref image or not
 function [change] = change_ref_or_not(norm_x, tracking_param)
 change = false;
@@ -286,20 +289,21 @@ function overlay_2_images(background_image, foreground_image)
     imwrite(overlaped_image,Filename);
 return;
 
-%%
-% warp 2d image using polygon points
+%% warp 2d image using polygon points
 function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygon)
-    resized_image = imresize(image_to_warp,[100, 100]);
-    matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
+    matchedPtsDistorted = [[0,0];[size(image_to_warp,1),0];...
+        [size(image_to_warp,1),size(image_to_warp,2)];...
+        [0,size(image_to_warp,2)]];
+    
     matchedPtsOriginal = polygon(1:2,1:end-1)';
     
     [tform,inlierIdx] = estimateGeometricTransform2D(matchedPtsDistorted,matchedPtsOriginal,'projective');
     
     outputView = imref2d(size(background_image.I));
-    warped_2d_image = imwarp(resized_image,tform,'OutputView',outputView);
+    warped_2d_image = imwarp(image_to_warp,tform,'OutputView',outputView);
 return;
 
-%% find projection matrix
+%% find 3d projection matrix
 function result = projection_matrix(camera_parameters, homography)
     %From the camera calibration matrix and the estimated homography
     %compute the 3D projection matrix
@@ -332,7 +336,7 @@ function img = render(img, obj, projection, h, w)
 % Render a loaded obj model into the current video frame
     
     vertices = obj.v;
-    scale_matrix = eye(3) * 1;
+    scale_matrix = eye(3) * 0.1;
 %     h = size(model,1);
 %     w = size(model,2);
 %     h = 200;

@@ -36,7 +36,8 @@
 %	CONTACT: comport@i3s.unice.fr
 %
 %====================================================================================
-
+% close all
+% clear variables
 
 function [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_param)
 
@@ -50,7 +51,7 @@ DEBUG_LEVEL_3 = 0;
 
 % AR
 kalb = imread("dog_grayscale_p.png");
-obj = readObj("models/wolf.obj");
+obj = readObj("models/shell.obj");
 % display_obj(obj,"dog_grayscale_p.png")
 w = 632;
 h = 480;
@@ -241,8 +242,8 @@ capture_params.string_size= 4; %4
 
 capture_params.first = 280; %1
 capture_params.last = 480;
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 
 [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
@@ -335,7 +336,7 @@ function img = render(img, obj, projection, h, w)
 % Render a loaded obj model into the current video frame
     
     vertices = obj.v;
-    scale_matrix = eye(3) * 0.1;
+    scale_matrix = eye(3) * 100;
 %     h = size(model,1);
 %     w = size(model,2);
 %     h = 200;

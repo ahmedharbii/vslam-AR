@@ -221,6 +221,7 @@ capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
 % capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 % capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+
 %for underwater: 
 capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
 
@@ -237,10 +238,12 @@ capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
-capture_params.first = 281; %1
-capture_params.last = 481;
-capture_params.savepolygon = 0; % to save the polygon --> 1
-capture_params.loadpolygon = 1; %to load the polygon --> 1
+
+capture_params.first = 280; %1
+capture_params.last = 480;
+capture_params.savepolygon = 1; % to save the polygon --> 1
+capture_params.loadpolygon = 0; %to load the polygon --> 1
+
 
 [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
 
@@ -287,14 +290,16 @@ return;
 
 %% warp 2d image using polygon points
 function warped_2d_image = warp_2d_image(image_to_warp, background_image, polygon)
-    resized_image = imresize(image_to_warp,[100, 100]);
-    matchedPtsDistorted = [[0,0];[100,0];[100,100];[0,100]];
+    matchedPtsDistorted = [[0,0];[size(image_to_warp,1),0];...
+        [size(image_to_warp,1),size(image_to_warp,2)];...
+        [0,size(image_to_warp,2)]];
+    
     matchedPtsOriginal = polygon(1:2,1:end-1)';
     
     [tform,inlierIdx] = estimateGeometricTransform2D(matchedPtsDistorted,matchedPtsOriginal,'projective');
     
     outputView = imref2d(size(background_image.I));
-    warped_2d_image = imwarp(resized_image,tform,'OutputView',outputView);
+    warped_2d_image = imwarp(image_to_warp,tform,'OutputView',outputView);
 return;
 
 %% find 3d projection matrix

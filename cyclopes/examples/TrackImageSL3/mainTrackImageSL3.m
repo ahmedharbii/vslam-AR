@@ -40,7 +40,7 @@
 
 function [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_param)
 
-% Setup debugging variables
+%% Setup debugging variables
 global DEBUG_LEVEL_1;
 global DEBUG_LEVEL_2;
 global DEBUG_LEVEL_3;
@@ -48,14 +48,14 @@ DEBUG_LEVEL_1 = 0;
 DEBUG_LEVEL_2 = 0;
 DEBUG_LEVEL_3 = 0;
 
-% Testing Modes
+%% Testing Modes
 overlap_image = false;
 save_overlaped_image = false;
 use_AR = false;
 save_AR = false;
 
 
-% AR
+%% AR
 kalb = imread("dog_grayscale_p.png");
 obj = readObj("models/fox.obj");
 % display_obj(obj,"dog_grayscale_p.png")
@@ -70,7 +70,7 @@ camera_parameters = [
     [0, 0, 1]];
 
 
-%for reference patch changing - Question 6
+%% for reference patch changing - Question 6
 tracking_param.changereference = 0;
 tracking_param.changereference_key = 0; %to turn off the whole changing reference
 tracking_param.changereference_thresh = 0.1;
@@ -91,34 +91,54 @@ addpath(sprintf('%s/include', capture_params.homedir));
 include(capture_params.homedir);
 
 close all;
-% Initialse - read reference image and select zone to track
+%% Initialse - read reference image and select zone to track
 % I can change the reference patch here or put inside the loop
 % we want to copy the warped image not the current image when changing the
 % reference patch
 ReferenceImage = InitTrackImageSL3(capture_params);
+
 close all;
+
+%% Initialise Homography
+%in calibration, no initalizing with identity
+%intialising the homography matrix with 3x3 identity
+H(:,:,1) = eye(3,3); 
+H_left(:,:,1) = eye(3,3);
+H_right(:,:,1) = eye(3,3);
+H_left_right(:,:,1) = eye(3,3);
+H_left_right(:,end,1) = [-50;0;1];
+
+
+%% read the first right image and make it the reference right image
+image_num_string = sprintf(['%0', num2str(capture_params.string_size), 'd'], capture_params.first);
+capture_params.data_dir = [pwd '\Versailles_canyon\Right\'];
+file_I = [capture_params.data_dir, capture_params.prefix, image_num_string, capture_params.suffix];
+[H_left_right, WarpedImage_right, norm_x_left_right, CurrentImage_right] = calc_homography(...
+    tracking_param,capture_params,file_I,ReferenceImage, H_left_right, 2);
+
+ReferenceImage_right = ReferenceImage;
+ReferenceImage_right.I = CurrentImage_right.I;
+%ReferenceImage.Irgb = CurrentImage.Irgb;
+ReferenceImage_right.polygon = WarpedImage_right.polygon;
+ReferenceImage_right.index = WarpedImage_right.index;
+ReferenceImage_right.Mask = WarpedImage_right.Mask;
 
 if(tracking_param.display)
     figure;
 	scrsz = get(0,'ScreenSize');
 	figure('Position',[scrsz(3)/4 scrsz(4)/2 scrsz(3)/2 scrsz(4)/2]);
 	DrawImagePoly('Reference Image', 1, ReferenceImage.I, ReferenceImage.polygon);
+%     figure;
+    DrawImagePoly('Warped Current Image Right', 2, CurrentImage_right.I, WarpedImage_right.polygon);
 end
-
-% Initialise Homography
-%in calibration, no initalizing with identity
-H(:,:,1) = eye(3,3); %intialising the homography matrix with 3x3 identity
-
-
-
-%% Overlab image to selected planar patch
-%%
-
+%% Loop
 % Homography index
 i=1;
 % Loop through sequence
 % Store the x values through the iterations
 all_x = [];
+all_x_left = [];
+all_x_right = [];
 % store the itertion number and norm_x that had a reference image change
 change_ref_i = [];
 change_ref_x = [];
@@ -127,27 +147,38 @@ change_ref_wrap_img_polygon = [];
 %u can change the reference patch here to do the left right for example
 for(k=capture_params.first+1:capture_params.last)
 		i = i+1;
-	
 		image_num_string = sprintf(['%0', num2str(capture_params.string_size), 'd'], k);
-		file_I = [capture_params.data_dir, capture_params.prefix, image_num_string, capture_params.suffix];
 
-		% Read current image
-		if(strcmp(capture_params.suffix, '.pgm'))
-			CurrentImage.I = imread(file_I);
-		else
-			CurrentImage.Irgb = imread(file_I);
-		  CurrentImage.I = rgb2gray(CurrentImage.Irgb);
-        end
-        
-        if(tracking_param.changereference && tracking_param.changereference_key)
-            Htrack = eye(3,3);
-        else
-            Htrack = H(:,:,i-1); %to pass it to TrackImageSL3
-        end
+        for j=1:2
+            if j == 1 
+                % Calculate Left Homography
+                capture_params.data_dir = [pwd '\Versailles_canyon\Left\'];
+                file_I = [capture_params.data_dir, capture_params.prefix, image_num_string, capture_params.suffix];
 
-		% Iterative non-linear homography estimation
-        [H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
-		H(:,:,i) %for displaying
+		        [H_left, WarpedImage_left, norm_x_left, CurrentImage_left] = calc_homography(...
+                    tracking_param,capture_params,file_I,ReferenceImage, H_left, i);
+
+                all_x_left = [all_x_left norm_x_left];
+                tracking_param.changereference = change_ref_or_not(norm_x_left, tracking_param);
+                disp("H_left = ")
+		        H_left(:,:,i) %for displaying
+
+            elseif j == 2
+                % Calculate Right Homography
+                capture_params.data_dir = [pwd '\Versailles_canyon\Right\'];
+                file_I = [capture_params.data_dir, capture_params.prefix, image_num_string, capture_params.suffix];
+
+		        [H_right, WarpedImage_right, norm_x_right, CurrentImage_right] = calc_homography(...
+                    tracking_param,capture_params,file_I,ReferenceImage_right, H_right, i);
+
+                all_x_right = [all_x_right norm_x_right];
+                tracking_param.changereference = change_ref_or_not(norm_x_right, tracking_param);
+                disp("H_right = ")
+		        H_right(:,:,i) %for displaying
+
+            end
+        end
+% 		H(:,:,i) %for displaying
         
         if overlap_image
             % warp a 2d image inside a polygon defined patch.
@@ -162,8 +193,6 @@ for(k=capture_params.first+1:capture_params.last)
         end
 
         % for changing the reference patch for Question 6
-        all_x = [all_x norm_x];
-        tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
         if(tracking_param.changereference && tracking_param.changereference_key)
             ReferenceImage.I = CurrentImage.I;
             %ReferenceImage.Irgb = CurrentImage.Irgb;
@@ -182,7 +211,10 @@ for(k=capture_params.first+1:capture_params.last)
             % draw polygon, show warped image, and error image.
 			figure(fig_num); hold on;
             fig_num = fig_num + 1;
-            DrawImagePoly('Warped Current Image', 1, CurrentImage.I, WarpedImage.polygon);
+%             subplot(1,2,1);
+            DrawImagePoly('Warped Current Image Left', 1, CurrentImage_left.I, WarpedImage_left.polygon);
+%             subplot(1,2,2);
+            DrawImagePoly('Warped Current Image Right', 2, CurrentImage_right.I, WarpedImage_right.polygon);
             
             if overlap_image
                 % overlay a 2d image on the polygon defined image patch
@@ -236,30 +268,29 @@ tracking_params.size_x = 8; % number of parameters to estimate
 % Change for your paths here
 capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
-
-% capture_params.data_dir = '/MIR Erasmus/VSLAM/Versailles_canyon/Right/'
-% capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+% capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 
 %for underwater: 
-capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
+% capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
 %capture_params.data_dir = [getenv('DIR_DATA'), '/../data/Versailles/Versailles_canyon/Left/']; 
 %capture_params.homedir = getenv('DIR_CYCLOPES'); 
 
 %for the street:
-% capture_params.prefix = 'ima';
-% capture_params.suffix = '.pgm';
+capture_params.prefix = 'ima';
+capture_params.suffix = '.pgm';
 
 % for the underwater:
-capture_params.prefix = 'img';
-capture_params.suffix = '.png';
+% capture_params.prefix = 'img';
+% capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
 
-capture_params.first = 280; %1
-capture_params.last = 480;
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
+capture_params.first = 50; %280
+capture_params.last = 100;%480
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
 

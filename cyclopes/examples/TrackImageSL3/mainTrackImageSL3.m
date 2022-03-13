@@ -53,7 +53,7 @@ overlap_image = false;
 save_overlaped_image = false;
 use_AR = false;
 save_AR = false;
-stereo = true;
+stereo = false;
 
 %% AR
 kalb = imread("dog_grayscale_p.png");
@@ -180,7 +180,9 @@ for(k=capture_params.first+1:capture_params.last)
             [ReferenceImage, H, WarpedImage, data_i] =...
                 track(tracking_param,ReferenceImage,CurrentImage,H,i);
             data = [data data_i];
-
+            if data_i.norm_x >= 50
+                return;
+            end
             % for changing the reference patch for Question 6
             if(tracking_param.changereference && tracking_param.changereference_key)
                 % these are for plotting purposes
@@ -247,13 +249,13 @@ return;
 % Default test function if no values are given
 function test()
 
-tracking_params.max_iter = 200; %can stop tracking from here - 45
+tracking_params.max_iter = 100; %can stop tracking from here - 45
 tracking_params.max_err = 200; %depends on the size of the patch, can do the average to be invariant on the patch size
 tracking_params.max_x = 1e-4; %norm(x), when x comes small, I will stop - 1e-1
 tracking_params.display = 1;
 tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
-tracking_params.mestimator = 0;
-tracking_params.robust_method='huber'; % Can be 'huber' or 'tukey' for the moment
+tracking_params.mestimator = 1;
+tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
 tracking_params.scale_threshold = 2; % 1 grey level - try 2
 tracking_params.size_x = 8; % number of parameters to estimate
 
@@ -286,20 +288,24 @@ capture_params.last = 100;%480
 capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
 
-% tracking_params.use_optimized = false;
-% tracking_params.initializer = "prev_estimate";
-% [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
-%     mainTrackImageSL3(capture_params, tracking_params);
-% assignin("base","data_1", data)
 
-tracking_params.use_optimized = false;
-tracking_params.initializer = "current_estimate";
+tracking_params.estimation_method = 1; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+tracking_params.mestimator = 1;
+tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
+[H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+    mainTrackImageSL3(capture_params, tracking_params);
+assignin("base","data_1", data)
+
+tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+tracking_params.mestimator = 1;
+tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
 assignin("base","data_2", data)
 
-tracking_params.use_optimized = true;
-tracking_params.initializer = "current_estimate";
+tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+tracking_params.mestimator = 1;
+tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
 assignin("base","data_3", data)

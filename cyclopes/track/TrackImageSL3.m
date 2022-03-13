@@ -107,9 +107,9 @@ if(tracking_param.display)
 	WarpedImage.polygon = WarpedImage.polygon./repmat(WarpedImage.polygon(3,:),3,1);
 
     %To display this in the loop
-	norm(x)
-	iter
-    norm(residues)
+% 	norm(x)
+% 	iter
+%     norm(residues)
 
 
 end

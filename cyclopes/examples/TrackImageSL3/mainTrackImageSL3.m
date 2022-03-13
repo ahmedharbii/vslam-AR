@@ -221,13 +221,13 @@ function test()
 
 addpath([pwd '\AR']);
 
-tracking_params.max_iter = 165; %can stop tracking from here - 45
+tracking_params.max_iter = 100; %can stop tracking from here - 45
 tracking_params.max_err = 200; %depends on the size of the patch, can do the average to be invariant on the patch size
 tracking_params.max_x = 1e-4; %norm(x), when x comes small, I will stop - 1e-1
 tracking_params.display = 1;
 tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 tracking_params.mestimator = 1;
-tracking_params.robust_method='huber'; % Can be 'huber' or 'tukey' for the moment
+tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
 tracking_params.scale_threshold = 2; % 1 grey level - try 2
 tracking_params.size_x = 8; % number of parameters to estimate
 
@@ -237,29 +237,29 @@ tracking_params.size_x = 8; % number of parameters to estimate
 capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
 
-% capture_params.data_dir = '/MIR Erasmus/VSLAM/Versailles_canyon/Right/'
-% capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+% capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 
 %for underwater: 
-capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
+% capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
 %capture_params.data_dir = [getenv('DIR_DATA'), '/../data/Versailles/Versailles_canyon/Left/']; 
 %capture_params.homedir = getenv('DIR_CYCLOPES'); 
 
 %for the street:
-% capture_params.prefix = 'ima';
-% capture_params.suffix = '.pgm';
+capture_params.prefix = 'ima';
+capture_params.suffix = '.pgm';
 
 % for the underwater:
-capture_params.prefix = 'img';
-capture_params.suffix = '.png';
+% capture_params.prefix = 'img';
+% capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
 
-capture_params.first = 280; %1
-capture_params.last = 480;
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
+capture_params.first = 50; %1
+capture_params.last = 100;
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
 

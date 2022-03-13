@@ -51,8 +51,8 @@ DEBUG_LEVEL_3 = 0;
 % Testing Modes
 overlap_image = false;
 save_overlaped_image = false;
-use_AR = false;
-save_AR = false;
+use_AR = true;
+save_AR = true;
 
 
 % AR

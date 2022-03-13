@@ -225,9 +225,9 @@ tracking_params.max_iter = 100; %can stop tracking from here - 45
 tracking_params.max_err = 200; %depends on the size of the patch, can do the average to be invariant on the patch size
 tracking_params.max_x = 1e-4; %norm(x), when x comes small, I will stop - 1e-1
 tracking_params.display = 1;
-tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 tracking_params.mestimator = 1;
-tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
+tracking_params.robust_method='tukey'; % Can be 'huber' or 'tukey' for the moment
 tracking_params.scale_threshold = 2; % 1 grey level - try 2
 tracking_params.size_x = 8; % number of parameters to estimate
 
@@ -284,7 +284,7 @@ return;
 %% function to decide whether to change ref image or not
 function [change] = change_ref_or_not(norm_x, tracking_param)
 change = false;
-if norm_x > tracking_param.changereference_thresh
+if norm_x < tracking_param.changereference_thresh
     change = true
 end
 return

@@ -144,8 +144,8 @@ if(tracking_param.display)
 end
 
 %% Initially no ref change
-tracking_param.changereference = 0;
-tracking_param.changereference_key = 0; %to turn off the whole changing reference
+tracking_param.changereference = 1;
+tracking_param.changereference_key = 1; %to turn off the whole changing reference
 tracking_param.changereference_thresh = 0.1;
 
 %% Loop
@@ -175,11 +175,12 @@ for(k=capture_params.first+1:capture_params.last)
         else
             % read the image
             CurrentImage = read_current_image(capture_params, image_num_string);
-%             tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
+            tracking_param.changereference = change_ref_or_not(data_i.norm_x, tracking_param);
             % track
-            [ReferenceImage, H, WarpedImage, data_i] =...
+            [ReferenceImage, H, WarpedImage, data_i, tracking_param] =...
                 track(tracking_param,ReferenceImage,CurrentImage,H,i);
             data = [data data_i];
+            assignin("base",capture_params.data_name, data)
             if data_i.norm_x >= 100
                 return;
             end
@@ -312,6 +313,7 @@ capture_params.loadpolygon = 1;
 tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 tracking_params.mestimator = 1;
 tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
+capture_params.data_name = "data_4";
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
 assignin("base","data_4", data)

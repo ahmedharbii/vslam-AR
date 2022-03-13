@@ -8,7 +8,7 @@ capture_params.data_dir = [pwd '\Versailles_canyon\Left\'];
 CurrentImage = read_current_image(capture_params, image_num_string);
 % tracking_param.changereference = change_ref_or_not(norm_x_left, tracking_param);
 % track
-[ReferenceImage, H_left, WarpedImage, data.left] =...
+[ReferenceImage, H_left, WarpedImage, data.left, tracking_param] =...
     track(tracking_param,ReferenceImage,CurrentImage,H_left,i);
 
 %% Calculate Right Homography
@@ -16,7 +16,7 @@ capture_params.data_dir = [pwd '\Versailles_canyon\Right\'];
 CurrentImage_right = read_current_image(capture_params, image_num_string);
 % tracking_param.changereference = change_ref_or_not(norm_x_right, tracking_param);
 % track
-[ReferenceImage_right, H_right, WarpedImage_right, data.right] =...
+[ReferenceImage_right, H_right, WarpedImage_right, data.right, tracking_param] =...
     track(tracking_param,ReferenceImage_right,CurrentImage_right,H_right,i);
 
 %% Calculate left-Right Homography

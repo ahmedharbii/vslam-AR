@@ -1,6 +1,7 @@
 % function plot_data(data)
 x_1 = [];
 x_2 = [];
+x_3 = [];
 for i = 1:size(data_1,2)
 norm_x_1(i) = data_1(i).norm_x;
 norm_r_1(i) = data_1(i).norm_residues;
@@ -14,7 +15,7 @@ end
 for i = 1:size(data_3,2)
 norm_x_3(i) = data_3(i).norm_x;
 norm_r_3(i) = data_3(i).norm_residues;
-x_3 = [x_2 data_3(i).x];
+x_3 = [x_3 data_3(i).x];
 end
 
 figure;

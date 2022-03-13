@@ -146,7 +146,7 @@ end
 %% Initially no ref change
 tracking_param.changereference = 1;
 tracking_param.changereference_key = 1; %to turn off the whole changing reference
-tracking_param.changereference_thresh = 0.1;
+tracking_param.changereference_thresh = 2000;
 
 %% Loop
 % Homography index
@@ -173,24 +173,30 @@ for(k=capture_params.first+1:capture_params.last)
                 data(i-1).left.norm_x, data(i-1).right.norm_x);
             
         else
+            if i == 2
+                norm_residues = 0;
+            else
+                norm_residues = data(end).norm_residues;
+            end
             % read the image
             CurrentImage = read_current_image(capture_params, image_num_string);
-            tracking_param.changereference = change_ref_or_not(data_i.norm_x, tracking_param);
             % track
             [ReferenceImage, H, WarpedImage, data_i, tracking_param] =...
-                track(tracking_param,ReferenceImage,CurrentImage,H,i);
-            data = [data data_i];
-            assignin("base",capture_params.data_name, data)
-            if data_i.norm_x >= 100
-                return;
-            end
+                track(tracking_param,ReferenceImage,CurrentImage,H,i,norm_residues);
             % for changing the reference patch for Question 6
             if(tracking_param.changereference && tracking_param.changereference_key)
                 % these are for plotting purposes
-                change_ref_i = [change_ref_i i];
-                change_ref_curr_img = [change_ref_curr_img CurrentImage.I];
-                change_ref_wrap_img_polygon = [change_ref_wrap_img_polygon WarpedImage.polygon];
+                data_i.change_ref_i = i;
+%                 change_ref_curr_img = [change_ref_curr_img CurrentImage.I];
+%                 change_ref_wrap_img_polygon = [change_ref_wrap_img_polygon WarpedImage.polygon];
+            else
+                data_i.change_ref_i = -1;
             end
+            data = [data data_i];
+            assignin("base",capture_params.data_name, data)
+%             if data_i.norm_x >= 200
+%                 return;
+%             end
         end
         
         if overlap_image
@@ -265,27 +271,27 @@ tracking_params.size_x = 8; % number of parameters to estimate
 % Change for your paths here
 capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
-% capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
 % capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 
 %for underwater: 
-capture_params.data_dir = [pwd '\IMAGES_smallRGB\'] 
+% capture_params.data_dir = [pwd '\IMAGES_smallRGB\'] 
 
 %for the street:
-% capture_params.prefix = 'ima';
-% capture_params.suffix = '.pgm';
+capture_params.prefix = 'ima';
+capture_params.suffix = '.pgm';
 
 % for the underwater:
-capture_params.prefix = 'img';
-capture_params.suffix = '.png';
+% capture_params.prefix = 'img';
+% capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
 
-capture_params.first = 153; %280
-capture_params.last = 661;%480
-capture_params.savepolygon = 0; % to save the polygon --> 1
-capture_params.loadpolygon = 1; %to load the polygon --> 1
+capture_params.first = 1; %153
+capture_params.last = 100;%661
+capture_params.savepolygon = 1; % to save the polygon --> 1
+capture_params.loadpolygon = 0; %to load the polygon --> 1
 
 
 % tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
@@ -294,7 +300,7 @@ capture_params.loadpolygon = 1; %to load the polygon --> 1
 % [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
 %     mainTrackImageSL3(capture_params, tracking_params);
 % assignin("base","data_1", data)
-capture_params.loadpolygon = 1;
+% capture_params.loadpolygon = 1;
 
 % tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 % tracking_params.mestimator = 1;
@@ -316,12 +322,12 @@ tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the momen
 capture_params.data_name = "data_4";
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
-assignin("base","data_4", data)
+assignin("base","data_4", data);
 % figure(2)
 % plot();
 % hold on;
 
-% scatter(change_ref_i, change_ref_x, 10,'red','filled',"o");
+scatter(change_ref_i, change_ref_x, 10,'red','filled',"o");
 % 
 % for i=1:size(change_ref_x,1)
 %     figure(3);

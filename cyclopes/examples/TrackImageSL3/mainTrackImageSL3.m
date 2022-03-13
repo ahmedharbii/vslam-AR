@@ -180,7 +180,7 @@ for(k=capture_params.first+1:capture_params.last)
             [ReferenceImage, H, WarpedImage, data_i] =...
                 track(tracking_param,ReferenceImage,CurrentImage,H,i);
             data = [data data_i];
-            if data_i.norm_x >= 50
+            if data_i.norm_x >= 100
                 return;
             end
             % for changing the reference patch for Question 6
@@ -264,52 +264,57 @@ tracking_params.size_x = 8; % number of parameters to estimate
 % Change for your paths here
 capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
-capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+% capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
 % capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 
 %for underwater: 
-% capture_params.data_dir = [pwd '\IMAGES_smallRGB\']
-%capture_params.data_dir = [getenv('DIR_DATA'), '/../data/Versailles/Versailles_canyon/Left/']; 
-%capture_params.homedir = getenv('DIR_CYCLOPES'); 
+capture_params.data_dir = [pwd '\IMAGES_smallRGB\'] 
 
 %for the street:
-capture_params.prefix = 'ima';
-capture_params.suffix = '.pgm';
+% capture_params.prefix = 'ima';
+% capture_params.suffix = '.pgm';
 
 % for the underwater:
-% capture_params.prefix = 'img';
-% capture_params.suffix = '.png';
+capture_params.prefix = 'img';
+capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
 
-capture_params.first = 50; %280
-capture_params.last = 100;%480
+capture_params.first = 153; %280
+capture_params.last = 661;%480
 capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 
-tracking_params.estimation_method = 1; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
-tracking_params.mestimator = 1;
-tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
-[H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
-    mainTrackImageSL3(capture_params, tracking_params);
-assignin("base","data_1", data)
+% tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+% tracking_params.mestimator = 1;
+% tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
+% [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+%     mainTrackImageSL3(capture_params, tracking_params);
+% assignin("base","data_1", data)
+capture_params.loadpolygon = 1;
 
-tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
-tracking_params.mestimator = 1;
-tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
-[H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
-    mainTrackImageSL3(capture_params, tracking_params);
-assignin("base","data_2", data)
+% tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+% tracking_params.mestimator = 1;
+% tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
+% [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+%     mainTrackImageSL3(capture_params, tracking_params);
+% assignin("base","data_2", data)
+
+% tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+% tracking_params.mestimator = 1;
+% tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
+% [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+%     mainTrackImageSL3(capture_params, tracking_params);
+% assignin("base","data_3", data)
 
 tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
 tracking_params.mestimator = 1;
 tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
-assignin("base","data_3", data)
-
+assignin("base","data_4", data)
 % figure(2)
 % plot();
 % hold on;

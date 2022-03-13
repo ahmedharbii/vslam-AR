@@ -94,7 +94,13 @@ while(iter< tracking_param.max_iter && norm(x) > tracking_param.max_x && norm(re
 		iter = iter+1;
 
 		if(tracking_param.display)
-			norm(x)
+            disp('residues:')
+            disp(norm(residues))
+            disp('iter')
+            disp(iter)
+            disp('max_x')
+            disp(norm(x))
+
         end
 end
 
@@ -119,5 +125,7 @@ data.norm_x = norm(x);
 data.residues = residues;
 data.norm_residues = norm(residues);
 data.iter = iter;
+data.currentImage = CurrentImage;
+data.WarpedImage = WarpedImage.polygon;
 return
 

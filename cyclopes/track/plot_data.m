@@ -2,45 +2,66 @@
 x_1 = [];
 x_2 = [];
 for i = 1:size(data_1,2)
-norm_x_1(i) = data_1(i).left_right.norm_x;
-norm_x_2(i) = data_2(i).left_right.norm_x;
-
-norm_r_1(i) = data_1(i).left_right.norm_residues;
-norm_r_2(i) = data_2(i).left_right.norm_residues;
-
-x_1 = [x_1 data_1(i).left_right.x];
-x_2 = [x_2 data_2(i).left_right.x];
-
-% norm_x_1(i) = data_1(i).left.norm_x;
-% norm_x_2(i) = data_2(i).left.norm_x;
-
-% norm_r_1(i) = data_1(i).left.norm_residues;
-% norm_r_2(i) = data_2(i).left.norm_residues;
-
-% x_1 = [x_1 data_1(i).left.x];
-% x_2 = [x_2 data_2(i).left.x];
+norm_x_1(i) = data_1(i).norm_x;
+norm_r_1(i) = data_1(i).norm_residues;
+x_1 = [x_1 data_1(i).x];
+end
+for i = 1:size(data_2,2)
+norm_x_2(i) = data_2(i).norm_x;
+norm_r_2(i) = data_2(i).norm_residues;
+x_2 = [x_2 data_2(i).x];
+end
+for i = 1:size(data_3,2)
+norm_x_3(i) = data_3(i).norm_x;
+norm_r_3(i) = data_3(i).norm_residues;
+x_3 = [x_2 data_3(i).x];
 end
 
 figure;
-plot(norm_x_1);
+set(gca,'FontWeight','bold');
+set(gca,'FontSize',15);
+plot(norm_x_1,LineWidth=1);
 hold on;
-plot(norm_x_2);
-legend(["prev_est", "curr_est"]);
-title("norm X")
+plot(norm_x_2,LineWidth=1);
+hold on;
+plot(norm_x_3,LineWidth=1);
+ylim([0 10]);
+legend(["Ref Jac", "Curr Jac", "ESM"]);
+title("norm x")
 
 figure;
-plot(norm_r_1);
+set(gca,'FontWeight','bold');
+set(gca,'FontSize',15);
+plot(norm_r_1,LineWidth=1);
 hold on;
-plot(norm_r_2);
-legend(["1", "2"]);
+plot(norm_r_2,LineWidth=1);
+hold on;
+plot(norm_r_3,LineWidth=1);
+legend(["Ref Jac", "Curr Jac", "ESM"]);
 title("norm residuals")
 
 figure;
+set(gca,'FontWeight','bold');
+set(gca,'FontSize',15);
 for j=1:8
-    subplot(2,8,j)
-    plot(x_1(j,:));
-    subplot(2,8,j+8)
-    plot(x_2(j,:));
+    subplot(3,8,j)
+    plot(x_1(j,:),LineWidth=1);
+    if j == 1
+        ylabel("Ref Jac");
+    end
+    title(sprintf(['x', num2str(j)]));
+    subplot(3,8,j+8)
+    plot(x_2(j,:),LineWidth=1);
+    if j == 1
+        ylabel("Curr Jac");
+    end
+    title(sprintf(['x', num2str(j)]));
+    subplot(3,8,j+2*8)
+    plot(x_3(j,:),LineWidth=1);
+    if j == 1
+        ylabel("ESM");
+    end
+    title(sprintf(['x', num2str(j)]));
 end
 % legend(["1", "2"]);
-title("X")
+% title("X")

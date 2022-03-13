@@ -289,23 +289,23 @@ capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 
-tracking_params.estimation_method = 1; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
-tracking_params.mestimator = 1;
-tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
-[H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
-    mainTrackImageSL3(capture_params, tracking_params);
-assignin("base","data_1", data)
+% tracking_params.estimation_method = 1; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
+% tracking_params.mestimator = 0;
+% tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
+% [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+%     mainTrackImageSL3(capture_params, tracking_params);
+% assignin("base","data_1", data)
 
 tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
-tracking_params.mestimator = 1;
-tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
+tracking_params.mestimator = 0;
+tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
 assignin("base","data_2", data)
 
 tracking_params.estimation_method = 3; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 
-tracking_params.mestimator = 1;
-tracking_params.robust_method='Tukey'; % Can be 'huber' or 'tukey' for the moment
+tracking_params.mestimator = 0;
+tracking_params.robust_method='Huber'; % Can be 'huber' or 'tukey' for the moment
 [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
     mainTrackImageSL3(capture_params, tracking_params);
 assignin("base","data_3", data)

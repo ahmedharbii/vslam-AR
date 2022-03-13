@@ -144,8 +144,8 @@ if(tracking_param.display)
 end
 
 %% Initially no ref change
-tracking_param.changereference = 1;
-tracking_param.changereference_key = 1; %to turn off the whole changing reference
+tracking_param.changereference = 0;
+tracking_param.changereference_key = 0; %to turn off the whole changing reference
 tracking_param.changereference_thresh = 2000;
 
 %% Loop
@@ -271,27 +271,27 @@ tracking_params.size_x = 8; % number of parameters to estimate
 % Change for your paths here
 capture_params.homedir = [pwd '\cyclopes\']
 %for the street:
-capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
+% capture_params.data_dir = [pwd '\Versailles_canyon\Left\']
 % capture_params.data_dir = [pwd '\Versailles_canyon\Right\']
 
 %for underwater: 
-% capture_params.data_dir = [pwd '\IMAGES_smallRGB\'] 
+capture_params.data_dir = [pwd '\IMAGES_smallRGB\'] 
 
 %for the street:
-capture_params.prefix = 'ima';
-capture_params.suffix = '.pgm';
+% capture_params.prefix = 'ima';
+% capture_params.suffix = '.pgm';
 
 % for the underwater:
-% capture_params.prefix = 'img';
-% capture_params.suffix = '.png';
+capture_params.prefix = 'img';
+capture_params.suffix = '.png';
 
 capture_params.string_size= 4; %4
 
 
-capture_params.first = 1; %153
-capture_params.last = 100;%661
-capture_params.savepolygon = 1; % to save the polygon --> 1
-capture_params.loadpolygon = 0; %to load the polygon --> 1
+capture_params.first = 160; %153
+capture_params.last = 661;%661
+capture_params.savepolygon = 0; % to save the polygon --> 1
+capture_params.loadpolygon = 1; %to load the polygon --> 1
 
 
 % tracking_params.estimation_method = 2; % 1 = Reference Jacobian, 2 = Current Jacobian, 3 = ESM 

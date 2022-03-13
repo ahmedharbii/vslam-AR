@@ -1,4 +1,4 @@
-function [ReferenceImage, H, WarpedImage, norm_x] = track(tracking_param,ReferenceImage,CurrentImage,H,i)
+function [ReferenceImage, H, WarpedImage, data] = track(tracking_param,ReferenceImage,CurrentImage,H,i)
 
 if(tracking_param.changereference && tracking_param.changereference_key)
     Htrack = eye(3,3);
@@ -10,10 +10,10 @@ else
     end
 end
 
-[H(:,:,i), WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
+[H(:,:,i), WarpedImage, data] = TrackImageSL3(ReferenceImage, CurrentImage, Htrack, tracking_param);
 
 if(tracking_param.changereference && tracking_param.changereference_key)
-    ReferenceImage = copy_image_data(ReferenceImage,CurrentImage);
+    ReferenceImage = copy_image_data(ReferenceImage,CurrentImage,WarpedImage);
 end
 
 end

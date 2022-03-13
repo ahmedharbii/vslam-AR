@@ -38,7 +38,7 @@
 %====================================================================================
 
 
-function [H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_param)
+function [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_param)
 
 %% Setup debugging variables
 global DEBUG_LEVEL_1;
@@ -84,6 +84,8 @@ end
 % Include project paths
 addpath(sprintf('%s/include', capture_params.homedir));
 include(capture_params.homedir);
+addpath([pwd '\AR']);
+
 
 close all;
 %% Initialse - read reference image and select zone to track
@@ -97,9 +99,6 @@ close all;
 %% Initialise Homography
 %in calibration, no initalizing with identity
 %intialising the homography matrix with 3x3 identity
-norm_x = 0;
-norm_x_left = 0;
-norm_x_right = 0;
 H(:,:,1) = eye(3,3); 
 H_left(:,:,1) = eye(3,3);
 H_right(:,:,1) = eye(3,3);
@@ -114,20 +113,23 @@ if stereo
     capture_params.data_dir = [pwd '\Versailles_canyon\Right\'];
     CurrentImage_right = read_current_image(capture_params, image_num_string);
     ReferenceImage_right = ReferenceImage;
-    ReferenceImage_right.I = CurrentImage_right.I;
     
     % Calculate Homography between left and right cameras
     % Transform the polygon from left reference image (left camera) to the right reference image
-    tracking_param.changereference_key = 1;
-    tracking_param.changereference = 1;
-    [H_left_right, WarpedImage_left_right, norm_x_left_right] =...
-        track_left_right(tracking_param, ReferenceImage, CurrentImage_right,...
-        H_left, H_right, H_left_right, 1, "hand_crafted", true);
+    tmp_tracking_param = tracking_param;
+    tmp_tracking_param.changereference_key = 1;
+    tmp_tracking_param.changereference = 1;
+    tmp_tracking_param.initializer = "hand_crafted";
+    tmp_tracking_param.use_optimized = true;
+    [H_left_right, WarpedImage_left_right, data(1).left_right] =...
+        track_left_right(tmp_tracking_param, ReferenceImage, CurrentImage_right,...
+        H_left, H_right, H_left_right, 1);
 
-    ReferenceImage_right.polygon = WarpedImage_left_right.polygon;
-    ReferenceImage_right.index = WarpedImage_left_right.index;
-    ReferenceImage_right.Mask = WarpedImage_left_right.Mask;
-    all_x_left_right = [norm_x_left_right];
+    ReferenceImage_right = copy_image_data(ReferenceImage, CurrentImage_right, WarpedImage_left_right);
+    data(1).left.norm_x = 0;
+    data(1).right.norm_x = 0;
+else
+    data = [];
 end
 
 %% First Display
@@ -142,18 +144,14 @@ if(tracking_param.display)
 end
 
 %% Initially no ref change
-tracking_param.changereference = 1;
-tracking_param.changereference_key = 1; %to turn off the whole changing reference
+tracking_param.changereference = 0;
+tracking_param.changereference_key = 0; %to turn off the whole changing reference
 tracking_param.changereference_thresh = 0.1;
 
 %% Loop
 % Homography index
 i=1;
 % Loop through sequence
-% Store the x values through the iterations
-all_x = [];
-all_x_left = [];
-all_x_right = [];
 % store the itertion number and norm_x that had a reference image change
 change_ref_i = [];
 change_ref_x = [];
@@ -165,35 +163,28 @@ for(k=capture_params.first+1:capture_params.last)
 		image_num_string = sprintf(['%0', num2str(capture_params.string_size), 'd'], k);
         
         if stereo
-            H_initializer = "prev_estimate";
-            use_optimized_H = false;
-            
-            % track left , right , and left to right
+            % track left-left , right-right , and left-right
             [ReferenceImage, ReferenceImage_right,...
                 H_left, H_right, H_left_right,...
-                norm_x_left, norm_x_right, norm_x_left_right...
+                data(i)...
                 ]...
                 = track_stereo(capture_params,image_num_string, tracking_param, i,...
                 ReferenceImage, ReferenceImage_right, H_left, H_right, H_left_right, ...
-                norm_x_left, norm_x_right, H_initializer, use_optimized_H);
+                data(i-1).left.norm_x, data(i-1).right.norm_x);
             
-            all_x_left = [all_x_left norm_x_left];
-            all_x_right = [all_x_right norm_x_right];
-            all_x_left_right = [all_x_left_right norm_x_left_right];
         else
             % read the image
             CurrentImage = read_current_image(capture_params, image_num_string);
-            tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
+%             tracking_param.changereference = change_ref_or_not(norm_x, tracking_param);
             % track
-            [ReferenceImage, H, WarpedImage, norm_x] =...
+            [ReferenceImage, H, WarpedImage, data_i] =...
                 track(tracking_param,ReferenceImage,CurrentImage,H,i);
-            all_x = [all_x norm_x];
+            data = [data data_i];
 
             % for changing the reference patch for Question 6
             if(tracking_param.changereference && tracking_param.changereference_key)
                 % these are for plotting purposes
-                change_ref_i = [change_ref_i i-1];
-                change_ref_x = [change_ref_x norm_x];
+                change_ref_i = [change_ref_i i];
                 change_ref_curr_img = [change_ref_curr_img CurrentImage.I];
                 change_ref_wrap_img_polygon = [change_ref_wrap_img_polygon WarpedImage.polygon];
             end
@@ -256,9 +247,7 @@ return;
 % Default test function if no values are given
 function test()
 
-addpath([pwd '\AR']);
-
-tracking_params.max_iter = 165; %can stop tracking from here - 45
+tracking_params.max_iter = 200; %can stop tracking from here - 45
 tracking_params.max_err = 200; %depends on the size of the patch, can do the average to be invariant on the patch size
 tracking_params.max_x = 1e-4; %norm(x), when x comes small, I will stop - 1e-1
 tracking_params.display = 1;
@@ -297,21 +286,37 @@ capture_params.last = 100;%480
 capture_params.savepolygon = 0; % to save the polygon --> 1
 capture_params.loadpolygon = 1; %to load the polygon --> 1
 
-[H, all_x, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] = mainTrackImageSL3(capture_params, tracking_params);
+% tracking_params.use_optimized = false;
+% tracking_params.initializer = "prev_estimate";
+% [H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+%     mainTrackImageSL3(capture_params, tracking_params);
+% assignin("base","data_1", data)
 
-figure(2)
-plot(all_x);
-hold on;
+tracking_params.use_optimized = false;
+tracking_params.initializer = "current_estimate";
+[H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+    mainTrackImageSL3(capture_params, tracking_params);
+assignin("base","data_2", data)
 
-scatter(change_ref_i, change_ref_x, 10,'red','filled',"o");
+tracking_params.use_optimized = true;
+tracking_params.initializer = "current_estimate";
+[H, data, change_ref_i, change_ref_x, change_ref_curr_img, change_ref_wrap_img_polygon] =...
+    mainTrackImageSL3(capture_params, tracking_params);
+assignin("base","data_3", data)
 
-for i=1:size(change_ref_x,1)
-    figure(3);
-    w = waitforbuttonpress;
-    sz1 = uint16(size(change_ref_curr_img, 2) / 3);
-    sz = uint16(size(change_ref_wrap_img_polygon, 2) / 3);
-    DrawImagePoly('Warped Current Image', 1, change_ref_curr_img(:,((i-1)*sz1 + 1):i*sz1), change_ref_wrap_img_polygon(:,((i-1)*sz + 1):i*sz));
-    title(["change at frame=" change_ref_i(i) "x=" change_ref_x(i)])
-end
+% figure(2)
+% plot();
+% hold on;
+
+% scatter(change_ref_i, change_ref_x, 10,'red','filled',"o");
+% 
+% for i=1:size(change_ref_x,1)
+%     figure(3);
+%     w = waitforbuttonpress;
+%     sz1 = uint16(size(change_ref_curr_img, 2) / 3);
+%     sz = uint16(size(change_ref_wrap_img_polygon, 2) / 3);
+%     DrawImagePoly('Warped Current Image', 1, change_ref_curr_img(:,((i-1)*sz1 + 1):i*sz1), change_ref_wrap_img_polygon(:,((i-1)*sz + 1):i*sz));
+%     title(["change at frame=" change_ref_i(i) "x=" change_ref_x(i)])
+% end
 
 return;

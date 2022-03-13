@@ -20,7 +20,7 @@
 %===================================================================
 
 
-function [Hnew, WarpedImage, norm_x] = TrackImageSL3(ReferenceImage, CurrentImage, H, tracking_param)
+function [Hnew, WarpedImage, data] = TrackImageSL3(ReferenceImage, CurrentImage, H, tracking_param)
 
 global DEBUG_LEVEL_2;
 if(DEBUG_LEVEL_2)
@@ -44,12 +44,12 @@ while(iter< tracking_param.max_iter && norm(x) > tracking_param.max_x && norm(re
 	  % Patch error/residue in vector form	-- changed it from residues to
       % residue
     residues = double(ReferenceImage.I(WarpedImage.index)) - WarpedImage.I(WarpedImage.index);
-    disp('residues:')
-    disp(norm(residues))
-    disp('iter')
-    disp(iter)
-    disp('max_x')
-    disp(norm(x))
+%     disp('residues:')
+%     disp(norm(residues))
+%     disp('iter')
+%     disp(iter)
+%     disp('max_x')
+%     disp(norm(x))
 
 		switch tracking_param.estimation_method
 
@@ -105,16 +105,19 @@ if(tracking_param.display)
     %To change the shape of polygon
 	WarpedImage.polygon = Hnew*ReferenceImage.polygon; 
 	WarpedImage.polygon = WarpedImage.polygon./repmat(WarpedImage.polygon(3,:),3,1);
-
+    
     %To display this in the loop
-	norm(x)
-	iter
-    norm(residues)
+% 	norm(x)
+% 	iter
+%     norm(residues)
 
 
 end
 
-norm_x = norm(x);
-
+data.x = x;
+data.norm_x = norm(x);
+data.residues = residues;
+data.norm_residues = norm(residues);
+data.iter = iter;
 return
 
